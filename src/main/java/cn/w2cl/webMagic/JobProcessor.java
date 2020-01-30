@@ -5,6 +5,9 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.pipeline.FilePipeline;
 import us.codecraft.webmagic.processor.PageProcessor;
+import us.codecraft.webmagic.scheduler.BloomFilterDuplicateRemover;
+import us.codecraft.webmagic.scheduler.QueueScheduler;
+import us.codecraft.webmagic.scheduler.Scheduler;
 import us.codecraft.webmagic.selector.Selectable;
 
 import java.util.List;
@@ -31,8 +34,11 @@ public class JobProcessor implements PageProcessor {
         page.putField("div5",page.getHtml().xpath("//div[@id=pane-news]/div/ul/li").toString());
 
         //抽取链接继续爬取
-        page.addTargetRequests(page.getHtml().css(".hotnews ul li").links().all());
-        page.putField("url",page.getHtml().xpath("//div[@class=cnt_bd]/h1"));
+//        page.addTargetRequests(page.getHtml().css(".hotnews ul li").links().all());
+//        page.putField("url",page.getHtml().xpath("//div[@class=cnt_bd]/h1"));
+        page.addTargetRequest("https://search.51job.com/list/000000,000000,0000,32%252C01,9,99,Java%25E5%25BC%2580%25E5%258F%2591,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=");
+        page.addTargetRequest("https://search.51job.com/list/000000,000000,0000,32%252C01,9,99,Java%25E5%25BC%2580%25E5%258F%2591,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=");
+        page.addTargetRequest("https://search.51job.com/list/000000,000000,0000,32%252C01,9,99,Java%25E5%25BC%2580%25E5%258F%2591,2,1.html?lang=c&stype=&postchannel=0000&workyear=99&cotype=99&degreefrom=99&jobterm=99&companysize=99&providesalary=99&lonlat=0%2C0&radius=-1&ord_field=0&confirmdate=9&fromType=&dibiaoid=0&address=&line=&specialarea=00&from=&welfare=");
     }
 
     //site是对爬虫进行的一些配置
@@ -51,10 +57,12 @@ public class JobProcessor implements PageProcessor {
      * @param args
      */
     public static void main(String[] args) {
-        Spider.create(new JobProcessor())
+        Spider spider = Spider.create(new JobProcessor())
                 .addUrl("https://news.baidu.com/") //添加要解析的页面地址
-                .addPipeline(new FilePipeline("C:\\Users\\admin123\\Desktop\\新建文件夹")) //pipeline默认输出是consolePipeline，而FilePipeline是输出到文件中
-                .thread(4)// 开启4个线程运行爬虫
-                .run(); //运行爬虫
+//                .addPipeline(new FilePipeline("C:\\Users\\admin123\\Desktop\\新建文件夹")) //pipeline默认输出是consolePipeline，而FilePipeline是输出到文件中
+                .setScheduler(new QueueScheduler().setDuplicateRemover(new BloomFilterDuplicateRemover(10000000))) //使用布隆去重对1000万条数据进行过滤去重，使用布隆去重必须添加谷歌的guava依赖
+                .thread(4);//运行爬虫
+        Scheduler scheduler = spider.getScheduler();
+        spider.run();
     }
 }
